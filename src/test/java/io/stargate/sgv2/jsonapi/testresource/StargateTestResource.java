@@ -147,6 +147,9 @@ public abstract class StargateTestResource
             .withEnv("HEAP_NEWSIZE", "512M")
             .withEnv("MAX_HEAP_SIZE", "2048M")
             .withEnv("CASSANDRA_CGROUP_MEMORY_LIMIT", "true")
+            .withEnv("CLUSTER_NAME", getClusterName())
+            .withEnv("DC", "datacenter1")
+            .withEnv("RACK", "rack1")
             .withEnv(
                 "JVM_EXTRA_OPTS",
                 "-Dcassandra.skip_wait_for_gossip_to_settle=0 -Dcassandra.load_ring_state=false -Dcassandra.initial_token=1")
@@ -159,9 +162,7 @@ public abstract class StargateTestResource
             .withStartupTimeout(this.getCassandraStartupTimeout())
             .withReuse(reuse);
     if (this.isDse()) {
-      container.withEnv("CLUSTER_NAME", getClusterName()).withEnv("DS_LICENSE", "accept");
-    } else {
-      container.withEnv("CASSANDRA_CLUSTER_NAME", getClusterName());
+      container.withEnv("DS_LICENSE", "accept");
     }
 
     return container;
@@ -179,7 +180,9 @@ public abstract class StargateTestResource
         (new GenericContainer(image))
             .withEnv("JAVA_OPTS", javaOpts)
             .withEnv("CLUSTER_NAME", getClusterName())
-            .withEnv("SIMPLE_SNITCH", "true")
+            .withEnv("DATACENTER_NAME", "datacenter1")
+            .withEnv("RACK_NAME", "rack1")
+            // .withEnv("SIMPLE_SNITCH", "true")
             .withEnv("ENABLE_AUTH", "true")
             .withNetworkAliases(new String[] {"coordinator"})
             .withExposedPorts(new Integer[] {8091, 8081, 8084, 9042})
@@ -189,9 +192,9 @@ public abstract class StargateTestResource
             .waitingFor(Wait.forHttp("/checker/readiness").forPort(8084).forStatusCode(200))
             .withStartupTimeout(this.getCoordinatorStartupTimeout())
             .withReuse(reuse);
-    if (this.isDse()) {
-      container.withEnv("DSE", "1");
-    }
+    // if (this.isDse()) {
+    //   container.withEnv("DSE", "1");
+    // }
 
     return container;
   }
@@ -277,7 +280,7 @@ public abstract class StargateTestResource
     String STARGATE_IMAGE_TAG = "v2.1";
     String CLUSTER_NAME = "int-test-cluster";
     String PERSISTENCE_MODULE = "persistence-cassandra-4.0";
-    String CLUSTER_DSE = null;
+    String CLUSTER_DSE = "true";
     long CASSANDRA_STARTUP_TIMEOUT = 2L;
     long COORDINATOR_STARTUP_TIMEOUT = 3L;
   }

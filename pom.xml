@@ -22,14 +22,13 @@
     <skipITs>false</skipITs>
     <!-- Integration test props -->
     <!-- When updating please change defaults in the DseTestResource class -->
-    <stargate.int-test.cassandra.image>stargateio/dse-next</stargate.int-test.cassandra.image>
-    <!-- from Stargate persistence, latest as of 2024-01-24: -->
-    <stargate.int-test.cassandra.image-tag>4.0.11-0248d170a615</stargate.int-test.cassandra.image-tag>
+    <stargate.int-test.cassandra.image>datastax/dse-server</stargate.int-test.cassandra.image>
+    <stargate.int-test.cassandra.image-tag>7.0.0-alpha.4</stargate.int-test.cassandra.image-tag>
     <stargate.int-test.coordinator.image>stargateio/coordinator-dse-next</stargate.int-test.coordinator.image>
     <stargate.int-test.coordinator.image-tag>v${stargate.version}</stargate.int-test.coordinator.image-tag>
     <stargate.int-test.cluster.name>dse-next-${stargate.int-test.cassandra.image-tag}-cluster</stargate.int-test.cluster.name>
     <stargate.int-test.cluster.persistence>persistence-dse-next</stargate.int-test.cluster.persistence>
-    <stargate.int-test.cluster.dse>false</stargate.int-test.cluster.dse>
+    <stargate.int-test.cluster.dse>true</stargate.int-test.cluster.dse>
     <stargate.int-test.cassandra.auth-enabled>true</stargate.int-test.cassandra.auth-enabled>
   </properties>
   <dependencyManagement>

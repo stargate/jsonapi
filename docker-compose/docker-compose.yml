@@ -1,32 +1,23 @@
 version: '2'
-
 services:
-  dse-1:
-    image: stargateio/dse-next:${DSETAG}
+  dse:
+    image: datastax/dse-server:${DSETAG}
+    platform: linux/amd64
     networks:
       - stargate
-    mem_limit: 2G
+    ports:
+      - "29042:9042"
+    mem_limit: 2560M
+    cap_add:
+      - IPC_LOCK
+    ulimits:
+      memlock: -1
     environment:
       - MAX_HEAP_SIZE=1536M
-      - CASSANDRA_CLUSTER_NAME=dse-${DSETAG}-cluster
-    healthcheck:
-      test: [ "CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces" ]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-
-  dse-2:
-    image: stargateio/dse-next:${DSETAG}
-    networks:
-      - stargate
-    mem_limit: 2G
-    depends_on:
-      dse-1:
-        condition: service_healthy
-    environment:
-      - MAX_HEAP_SIZE=1536M
-      - CASSANDRA_SEEDS=dse-1
-      - CASSANDRA_CLUSTER_NAME=dse-${DSETAG}-cluster
+      - CLUSTER_NAME=dse-${DSETAG}-cluster
+      - DC=datacenter1
+      - RACK=rack1
+      - DS_LICENSE=accept
     healthcheck:
       test: [ "CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces" ]
       interval: 15s
@@ -36,7 +27,7 @@ services:
   coordinator:
     image: stargateio/coordinator-dse-next:${SGTAG}
     depends_on:
-      dse-1:
+      dse:
         condition: service_healthy
     networks:
       - stargate
@@ -47,7 +38,7 @@ services:
     environment:
       - JAVA_OPTS="-Xmx1536M"
       - CLUSTER_NAME=dse-${DSETAG}-cluster
-      - SEED=dse-1
+      - SEED=dse
       - RACK_NAME=rack1
       - DATACENTER_NAME=datacenter1
       - ENABLE_AUTH=true
@@ -71,14 +62,15 @@ services:
       - JAVA_MAX_MEM_RATIO=75
       - JAVA_INITIAL_MEM_RATIO=50
       - GC_CONTAINER_OPTIONS=-XX:+UseG1GC
-      - STARGATE_JSONAPI_OPERATIONS_DATABASE_CONFIG_CASSANDRA_END_POINTS=coordinator
       - QUARKUS_HTTP_ACCESS_LOG_ENABLED=${REQUESTLOG}
       - QUARKUS_LOG_LEVEL=${LOGLEVEL}
+      - STARGATE_JSONAPI_OPERATIONS_DATABASE_CONFIG_CASSANDRA_END_POINTS=coordinator
       - JAVA_OPTS_APPEND=-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager
     healthcheck:
       test: curl -f http://localhost:8181/stargate/health || exit 1
       interval: 5s
       timeout: 10s
       retries: 10
+
 networks:
   stargate:

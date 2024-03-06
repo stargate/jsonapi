@@ -58,7 +58,7 @@ jobs:
           docker pull ${{ secrets.ECR_REPOSITORY }}/stargateio/coordinator-dse-next:$SGTAG
           docker image tag ${{ secrets.ECR_REPOSITORY }}/stargateio/coordinator-dse-next:$SGTAG stargateio/coordinator-dse-next:$SGTAG
           cd docker-compose
-          ./start_dse_next_dev_mode.sh -j $JSONTAG -t $SGTAG
+          ./start_dse_70_dev_mode.sh -j $JSONTAG -t $SGTAG
 
       - name: Install Postman CLI
         run: |

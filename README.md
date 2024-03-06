@@ -28,10 +28,10 @@ The quickest way to test out the JSON API directly is to start a local copy of t
 
 ```shell
 cd docker-compose
-./start_dse_next_dev_mode.sh
+./start_dse_70_dev_mode.sh
 ```
 
-This starts an instance of the JSON API along with a Stargate coordinator node in "developer mode" (with DataStax Enterprise 6.8 embedded). 
+This starts an instance of the JSON API along with a Stargate coordinator node in "developer mode" (with DataStax Enterprise 7.0 embedded). 
 
 > **Warning**
 > Running this script with no options will use the latest `v1` tagged version of JSON API and latest `v2` tagged version of the Stargate coordinator. Therefore, if you have these tags already present in your local Docker from other development/testing, those are the images that will be used. See our Docker compose [README](docker-compose/README.md) to see additional options.
@@ -71,7 +71,7 @@ Note that this project uses Java 17, please ensure that you have the target JDK 
 
 You can run your application in dev mode that enables live coding using:
 ```shell script
-docker run -d --rm -e CLUSTER_NAME=dse-cluster -e CLUSTER_VERSION=6.8 -e ENABLE_AUTH=true -e DEVELOPER_MODE=true -e DS_LICENSE=accept -e DSE=true -p 8081:8081 -p 8091:8091 -p 9042:9042 stargateio/coordinator-dse-next:v2
+docker run -d --rm -e CLUSTER_NAME=dse-cluster -e CLUSTER_VERSION=7.0 -e ENABLE_AUTH=true -e DEVELOPER_MODE=true -e DS_LICENSE=accept -e DSE=true -p 8081:8081 -p 8091:8091 -p 9042:9042 stargateio/coordinator-dse-next:v2
 
 ./mvnw compile quarkus:dev
 ```
@@ -104,7 +104,7 @@ Running integration tests from an IDE is supported out of the box.
 The tests will use the DSE Next as the data store by default.
 Running a test with a different version of the data store or the Stargate coordinator requires changing the run configuration and specifying the following system properties:
 
-* `testing.containers.cassandra-image` - version of the Cassandra docker image to use, for example: `stargateio/dse-next:4.0.7-336cdd7405ee`
+* `testing.containers.cassandra-image` - version of the Cassandra docker image to use, for example: `datastax/dse-server:7.0.0-alpha.4`
 * `testing.containers.stargate-image` - version of the Stargate coordinator docker image to use, for example: `stargateio/coordinator-4_0:v2.1` (must be V2.1 coordinator for the target data store)
 * `testing.containers.cluster-dse` - optional and only needed if coordinator is used
 

@@ -1,6 +1,6 @@
-# Docker Compose scripts for JSONAPI with DSE-next
+# Docker Compose scripts for JSONAPI with DSE 7
 
-This directory provides two ways to start the JSON API and Stargate coordinator with DSE-next using `docker compose`.
+This directory provides two ways to start the JSON API and Stargate coordinator with DSE 7 using `docker compose`.
 
 ## Prerequisites
 
@@ -19,33 +19,33 @@ You can control the platform using the `-Dquarkus.docker.buildx.platform=linux/a
 
 Follow instructions under the [Script options](#script-options) section to use the locally built image.
 
-## Stargate JSON API with 3-node DSE-next cluster
+## Stargate JSON API with single node DSE 7 cluster
 
 You can start a simple Stargate configuration with the following command:
 
 ```
-./start_dse_next.sh
+./start_dse_70.sh
 ``` 
 
 This convenience script verifies your Docker installation meets minimum requirements and brings up the configuration described in the `docker-compose.yml` file. The configuration includes health criteria for each container that is used to ensure the containers come up in the correct order.
 
 The convenience script uses the `-d` and `--wait` options to track the startup progress, so that the compose command exits when all containers have started and reported healthy status within a specified timeout. 
 
-The environment settings in the `.env` file include variables that describe the image tags that will be used by default, typically JSON API `v1`, Stargate `v2` and DSE `4.0.7-SHA` (where `SHA` is a unique indicator for commit used to build DSE-next). The `start_dse_next.sh` script supports [options](#script-options) for overriding which image tags are used, including using a locally generated image as described [above](#building-the-local-docker-image).
+The environment settings in the `.env` file include variables that describe the image tags that will be used by default, typically JSON API `v1`, Stargate `v2` and DSE `7.0.x`. The `start_dse_70.sh` script supports [options](#script-options) for overriding which image tags are used, including using a locally generated image as described [above](#building-the-local-docker-image).
 We recommend doing a `docker compose pull` periodically to ensure you always have the latest patch versions of these tags.
 
 Once done using the containers, you can stop them using the command `docker compose down`.
 
-## Stargate JSON API with embedded DSE-next in coordinator (developer mode)
+## Stargate JSON API with embedded DSE 7 in coordinator (developer mode)
 
 This alternate configuration runs the Stargate coordinator node in developer mode, so that no separate Cassandra cluster is required.
 This configuration is useful for development and testing since it initializes more quickly, but is not recommended for production deployments. It can be run with the command:
 
 ```
-./start_dse_next_dev_mode.sh
+./start_dse_70_dev_mode.sh
 ``` 
 
-This script supports the same [options](#script-options) as the `start_dse_next.sh` script. 
+This script supports the same [options](#script-options) as the `start_dse_70.sh` script. 
 
 To stop the configuration, use the command:
 
@@ -74,7 +74,7 @@ Both convenience scripts support the following options:
 
 * When using the convenience scripts, the Docker image (`JSONTAG`) is the current (snapshot) version as defined in the top level project `pom.xml` file. It can be overridden with the `-t` option on either script:
 
-  `./start_dse_next.sh -t v1.0.0`
+  `./start_dse_70.sh -t v1.0.0`
 
 * Running more than one of these multi-container environments on one host may require changing the port mapping to be changed to avoid conflicts on the host machine.
 
