@@ -43,7 +43,10 @@ public class GeneralResource {
     this.meteredCommandProcessor = meteredCommandProcessor;
   }
 
-  @Operation(summary = "Execute command", description = "Executes a single general command.")
+  @Operation(
+      summary = "Execute command",
+      description = "Executes a single general command.",
+      operationId = "general operation")
   @RequestBody(
       content =
           @Content(

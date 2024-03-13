@@ -52,7 +52,8 @@ public class NamespaceResource {
 
   @Operation(
       summary = "Execute command",
-      description = "Executes a single command against a collection.")
+      description = "Executes a single command against a collection.",
+      operationId = "namespace operation")
   @Parameters(value = {@Parameter(name = "namespace", ref = "namespace")})
   @RequestBody(
       content =

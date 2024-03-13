@@ -19,7 +19,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
     example = """
              {"name": "Aaron", "country": "US"}
               """)
-public record FilterClause(LogicalExpression logicalExpression) {
+public record FilterClause(@Schema(hidden = true) LogicalExpression logicalExpression) {
   public void validate(CommandContext commandContext) {
     DocumentProjector indexingProjector = commandContext.indexingProjector();
     // If nothing specified, everything indexed

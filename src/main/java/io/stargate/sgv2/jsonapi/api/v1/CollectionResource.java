@@ -75,7 +75,8 @@ public class CollectionResource {
 
   @Operation(
       summary = "Execute command",
-      description = "Executes a single command against a collection.")
+      description = "Executes a single command against a collection.",
+      operationId = "collection operation")
   @Parameters(
       value = {
         @Parameter(name = "namespace", ref = "namespace"),
