@@ -1,4 +1,4 @@
-package io.stargate.sgv2.jsonapi.api.security;
+package io.stargate.sgv2.jsonapi.api.security.challenge.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 /** Responds with {@link CommandResult} containing an error on send challenge. */
 @ApplicationScoped
+// TODO: create Data API ChallengerSender when remove quarkus-common dependency
 public class ErrorChallengeSender implements ChallengeSender {
 
   private static final Logger LOG = LoggerFactory.getLogger(ErrorChallengeSender.class);

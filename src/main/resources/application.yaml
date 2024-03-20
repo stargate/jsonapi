@@ -3,6 +3,23 @@
 
 stargate:
 
+  # security and authentication configuration
+  # see io.stargate.sgv2.jsonapi.config.AuthConfig for all config properties and options
+  auth:
+    # header-based security by default
+    # if changed, adapt token resolver type
+    header-based:
+      enabled: true
+
+    # Cassandra token resolver from principal
+    token-resolver:
+      type: principal
+
+  # multi tenancy settings
+  # see io.stargate.sgv2.jsonapi.config.MultiTenancyConfig  for all config properties and options
+  multi-tenancy:
+    enabled: false
+
   database:
     limits:
       max-collections: 5
