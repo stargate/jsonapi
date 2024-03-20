@@ -2,6 +2,7 @@ package io.stargate.sgv2.jsonapi.service.operation.model.impl;
 
 import io.smallrye.mutiny.Uni;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandResult;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.service.cqldriver.executor.QueryExecutor;
 import io.stargate.sgv2.jsonapi.service.embedding.configuration.EmbeddingServiceConfigStore;
 import io.stargate.sgv2.jsonapi.service.operation.model.Operation;
@@ -17,7 +18,8 @@ public record CreateEmbeddingServiceOperation(
     String apiKey)
     implements Operation {
   @Override
-  public Uni<Supplier<CommandResult>> execute(QueryExecutor queryExecutor) {
+  public Uni<Supplier<CommandResult>> execute(
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor) {
     EmbeddingServiceConfigStore.ServiceConfig serviceConfig =
         EmbeddingServiceConfigStore.ServiceConfig.provider(
             serviceName, providerName, apiKey, baseUrl);

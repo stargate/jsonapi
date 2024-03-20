@@ -6,6 +6,7 @@ import io.stargate.sgv2.jsonapi.api.model.command.CommandResult;
 import io.stargate.sgv2.jsonapi.api.model.command.GeneralCommand;
 import io.stargate.sgv2.jsonapi.api.model.command.impl.CreateEmbeddingServiceCommand;
 import io.stargate.sgv2.jsonapi.api.model.command.impl.CreateNamespaceCommand;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.config.constants.OpenApiConstants;
 import io.stargate.sgv2.jsonapi.service.processor.MeteredCommandProcessor;
 import jakarta.inject.Inject;
@@ -37,6 +38,8 @@ public class GeneralResource {
   public static final String BASE_PATH = "/v1";
 
   private final MeteredCommandProcessor meteredCommandProcessor;
+
+  @Inject private DataApiRequestInfo dataApiRequestInfo;
 
   @Inject
   public GeneralResource(MeteredCommandProcessor meteredCommandProcessor) {
@@ -76,7 +79,7 @@ public class GeneralResource {
   public Uni<RestResponse<CommandResult>> postCommand(@NotNull @Valid GeneralCommand command) {
     // call processor
     return meteredCommandProcessor
-        .processCommand(CommandContext.empty(), command)
+        .processCommand(dataApiRequestInfo, CommandContext.empty(), command) // TODO-SL
         // map to 2xx unless overridden by error
         .map(commandResult -> commandResult.map());
   }

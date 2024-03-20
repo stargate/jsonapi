@@ -6,6 +6,7 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandContext;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandResult;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.exception.ErrorCode;
 import io.stargate.sgv2.jsonapi.exception.JsonApiException;
 import io.stargate.sgv2.jsonapi.service.cqldriver.executor.QueryExecutor;
@@ -25,16 +26,33 @@ import java.util.function.Supplier;
  * @param ordered If insert should be ordered.
  */
 public record InsertOperation(
-    CommandContext commandContext, List<WritableShreddedDocument> documents, boolean ordered)
+    CommandContext commandContext,
+    List<WritableShreddedDocument> documents,
+    boolean ordered,
+    boolean conditionalInsert)
     implements ModifyOperation {
 
+  public InsertOperation(
+      CommandContext commandContext, List<WritableShreddedDocument> documents, boolean ordered) {
+    this(commandContext, documents, ordered, true);
+  }
+
   public InsertOperation(CommandContext commandContext, WritableShreddedDocument document) {
-    this(commandContext, List.of(document), false);
+    this(commandContext, List.of(document), false, true);
+  }
+
+  private InsertOperation(CommandContext commandContext) {
+    this(commandContext, List.of(), false, false);
+  }
+
+  public static InsertOperation forCQL(CommandContext commandContext) {
+    return new InsertOperation(commandContext);
   }
 
   /** {@inheritDoc} */
   @Override
-  public Uni<Supplier<CommandResult>> execute(QueryExecutor queryExecutor) {
+  public Uni<Supplier<CommandResult>> execute(
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor) {
     final boolean vectorEnabled = commandContext().isVectorEnabled();
     if (!vectorEnabled && documents.stream().anyMatch(doc -> doc.queryVectorValues() != null)) {
       throw new JsonApiException(
@@ -42,19 +60,21 @@ public record InsertOperation(
           ErrorCode.VECTOR_SEARCH_NOT_SUPPORTED.getMessage() + commandContext().collection());
     }
     // create json doc write metrics
-    commandContext
-        .jsonProcessingMetricsReporter()
-        .reportJsonWrittenDocsMetrics(commandContext().commandName(), documents.size());
+    if (commandContext.jsonProcessingMetricsReporter() != null) { // TODO-SL
+      commandContext
+          .jsonProcessingMetricsReporter()
+          .reportJsonWrittenDocsMetrics(commandContext().commandName(), documents.size());
+    }
     if (ordered) {
-      return insertOrdered(queryExecutor, vectorEnabled);
+      return insertOrdered(dataApiRequestInfo, queryExecutor, vectorEnabled);
     } else {
-      return insertUnordered(queryExecutor, vectorEnabled);
+      return insertUnordered(dataApiRequestInfo, queryExecutor, vectorEnabled);
     }
   }
 
   // implementation for the ordered insert
   private Uni<Supplier<CommandResult>> insertOrdered(
-      QueryExecutor queryExecutor, boolean vectorEnabled) {
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor, boolean vectorEnabled) {
 
     // build query once
     final String query = buildInsertQuery(vectorEnabled);
@@ -66,7 +86,7 @@ public record InsertOperation(
         .onItem()
         .transformToUni(
             doc ->
-                insertDocument(queryExecutor, query, doc, vectorEnabled)
+                insertDocument(dataApiRequestInfo, queryExecutor, query, doc, vectorEnabled)
 
                     // wrap item and failure
                     // the collection can decide how to react on failure
@@ -103,7 +123,7 @@ public record InsertOperation(
 
   // implementation for the unordered insert
   private Uni<Supplier<CommandResult>> insertUnordered(
-      QueryExecutor queryExecutor, boolean vectorEnabled) {
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor, boolean vectorEnabled) {
     // build query once
     String query = buildInsertQuery(vectorEnabled);
     return Multi.createFrom()
@@ -113,7 +133,7 @@ public record InsertOperation(
         .onItem()
         .transformToUniAndMerge(
             doc ->
-                insertDocument(queryExecutor, query, doc, vectorEnabled)
+                insertDocument(dataApiRequestInfo, queryExecutor, query, doc, vectorEnabled)
 
                     // handle errors fail silent mode
                     .onItemOrFailure()
@@ -129,6 +149,7 @@ public record InsertOperation(
 
   // inserts a single document
   private static Uni<DocumentId> insertDocument(
+      DataApiRequestInfo dataApiRequestInfo,
       QueryExecutor queryExecutor,
       String query,
       WritableShreddedDocument doc,
@@ -136,7 +157,7 @@ public record InsertOperation(
     // bind and execute
     SimpleStatement boundStatement = bindInsertValues(query, doc, vectorEnabled);
     return queryExecutor
-        .executeWrite(boundStatement)
+        .executeWrite(dataApiRequestInfo, boundStatement)
 
         // ensure document was written, if no applied continue with error
         .onItem()
@@ -156,13 +177,14 @@ public record InsertOperation(
   }
 
   // utility for building the insert query
-  private String buildInsertQuery(boolean vectorEnabled) {
+  public String buildInsertQuery(boolean vectorEnabled) {
     if (vectorEnabled) {
       String insertWithVector =
           "INSERT INTO \"%s\".\"%s\""
               + " (key, tx_id, doc_json, exist_keys, array_size, array_contains, query_bool_values, query_dbl_values , query_text_values, query_null_values, query_timestamp_values, query_vector_value)"
               + " VALUES"
-              + " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)  IF NOT EXISTS";
+              + " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+              + (conditionalInsert ? " IF NOT EXISTS" : "");
       return String.format(
           insertWithVector, commandContext.namespace(), commandContext.collection());
     } else {
@@ -170,7 +192,8 @@ public record InsertOperation(
           "INSERT INTO \"%s\".\"%s\""
               + " (key, tx_id, doc_json, exist_keys, array_size, array_contains, query_bool_values, query_dbl_values , query_text_values, query_null_values, query_timestamp_values)"
               + " VALUES"
-              + " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)  IF NOT EXISTS";
+              + " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+              + (conditionalInsert ? " IF NOT EXISTS" : "");
       return String.format(insert, commandContext.namespace(), commandContext.collection());
     }
   }

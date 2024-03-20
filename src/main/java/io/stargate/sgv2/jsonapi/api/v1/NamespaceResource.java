@@ -93,7 +93,7 @@ public class NamespaceResource {
 
     // call processor
     return meteredCommandProcessor
-        .processCommand(commandContext, command)
+        .processCommand(dataApiRequestInfo, commandContext, command)
         // map to 2xx unless overridden by error
         .map(commandResult -> commandResult.map());
   }

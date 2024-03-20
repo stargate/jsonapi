@@ -99,7 +99,7 @@ public class SerialConsistencyOverrideOperationTest extends OperationTestBase {
       AsyncResultSet selectResults = new MockAsyncResultSet(keyAndTxtIdColumns, selectRows, null);
       final AtomicInteger callCountSelect = new AtomicInteger();
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.executeRead(eq(selectStmt), any(), anyInt()))
+      when(queryExecutor.executeRead(eq(dataApiRequestInfo), eq(selectStmt), any(), anyInt()))
           .then(
               invocation -> {
                 callCountSelect.incrementAndGet();
@@ -114,10 +114,10 @@ public class SerialConsistencyOverrideOperationTest extends OperationTestBase {
       List<Row> deleteRows = Arrays.asList(resultRow(COLUMNS_APPLIED, 0, byteBufferFrom(true)));
       AsyncResultSet deleteResults = new MockAsyncResultSet(COLUMNS_APPLIED, deleteRows, null);
       final AtomicInteger callCountDelete = new AtomicInteger();
-      when(queryExecutor.executeWrite(eq(deleteStmt)))
+      when(queryExecutor.executeWrite(eq(dataApiRequestInfo), eq(deleteStmt)))
           .then(
               invocation -> {
-                SimpleStatement stmt = invocation.getArgument(0);
+                SimpleStatement stmt = invocation.getArgument(1);
                 callCountDelete.incrementAndGet();
                 return Uni.createFrom().item(deleteResults);
               });
@@ -140,7 +140,7 @@ public class SerialConsistencyOverrideOperationTest extends OperationTestBase {
       DeleteOperation operation = DeleteOperation.delete(COMMAND_CONTEXT, findOperation, 1, 3);
       Supplier<CommandResult> execute =
           operation
-              .execute(queryExecutor)
+              .execute(dataApiRequestInfo, queryExecutor)
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitItem()
@@ -201,7 +201,7 @@ public class SerialConsistencyOverrideOperationTest extends OperationTestBase {
       AsyncResultSet results = new MockAsyncResultSet(COLUMNS_APPLIED, resultRows, null);
       final AtomicInteger callCount = new AtomicInteger();
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.executeWrite(eq(stmt)))
+      when(queryExecutor.executeWrite(eq(dataApiRequestInfo), eq(stmt)))
           .then(
               invocation -> {
                 callCount.incrementAndGet();
@@ -211,7 +211,7 @@ public class SerialConsistencyOverrideOperationTest extends OperationTestBase {
       InsertOperation operation = new InsertOperation(COMMAND_CONTEXT, shredDocument);
       Supplier<CommandResult> execute =
           operation
-              .execute(queryExecutor)
+              .execute(dataApiRequestInfo, queryExecutor)
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitItem()
@@ -257,7 +257,7 @@ public class SerialConsistencyOverrideOperationTest extends OperationTestBase {
       AsyncResultSet selectResults = new MockAsyncResultSet(keyTxIdDocColumns, selectRows, null);
       final AtomicInteger callCountSelect = new AtomicInteger();
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.executeRead(eq(selectStmt), any(), anyInt()))
+      when(queryExecutor.executeRead(eq(dataApiRequestInfo), eq(selectStmt), any(), anyInt()))
           .then(
               invocation -> {
                 callCountSelect.incrementAndGet();
@@ -312,7 +312,7 @@ public class SerialConsistencyOverrideOperationTest extends OperationTestBase {
       List<Row> resultRows = Arrays.asList(resultRow(COLUMNS_APPLIED, 0, byteBufferFrom(true)));
       AsyncResultSet updateResults = new MockAsyncResultSet(COLUMNS_APPLIED, resultRows, null);
       final AtomicInteger callCountUpdate = new AtomicInteger();
-      when(queryExecutor.executeWrite(eq(updateStmt)))
+      when(queryExecutor.executeWrite(eq(dataApiRequestInfo), eq(updateStmt)))
           .then(
               invocation -> {
                 callCountUpdate.incrementAndGet();
@@ -354,7 +354,7 @@ public class SerialConsistencyOverrideOperationTest extends OperationTestBase {
 
       Supplier<CommandResult> execute =
           operation
-              .execute(queryExecutor)
+              .execute(dataApiRequestInfo, queryExecutor)
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitItem()

@@ -97,12 +97,12 @@ public class MeteredCommandProcessor {
    * @return Uni emitting the result of the command execution.
    */
   public <T extends Command> Uni<CommandResult> processCommand(
-      CommandContext commandContext, T command) {
+      DataApiRequestInfo dataApiRequestInfo, CommandContext commandContext, T command) {
     Timer.Sample sample = Timer.start(meterRegistry);
     MDC.put("tenantId", dataApiRequestInfo.getTenantId().orElse(UNKNOWN_VALUE));
     // start by resolving the command, get resolver
     return commandProcessor
-        .processCommand(commandContext, command)
+        .processCommand(dataApiRequestInfo, commandContext, command)
         .onItem()
         .invoke(
             result -> {

@@ -16,7 +16,6 @@ import io.quarkus.test.junit.TestProfile;
 import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.config.OperationsConfig;
 import jakarta.inject.Inject;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -51,8 +50,7 @@ public class CqlSessionCacheTimingTests {
   }
 
   @Test
-  public void testOSSCxCQLSessionCacheTimedEviction()
-      throws NoSuchFieldException, IllegalAccessException, InterruptedException {
+  public void testOSSCxCQLSessionCacheTimedEviction() throws InterruptedException {
     CQLSessionCache cqlSessionCacheForTest = new CQLSessionCache(operationsConfig, meterRegistry);
     int sessionsToCreate = operationsConfig.databaseConfig().sessionCacheMaxSize();
     for (int i = 0; i < sessionsToCreate; i++) {
@@ -61,11 +59,7 @@ public class CqlSessionCacheTimingTests {
       when(dataApiRequestInfo.getTenantId()).thenReturn(Optional.of(tenantId));
       when(dataApiRequestInfo.getCassandraToken())
           .thenReturn(operationsConfig.databaseConfig().fixedToken());
-      Field dataApiRequestInfoField =
-          cqlSessionCacheForTest.getClass().getDeclaredField("dataApiRequestInfo");
-      dataApiRequestInfoField.setAccessible(true);
-      dataApiRequestInfoField.set(cqlSessionCacheForTest, dataApiRequestInfo);
-      CqlSession cqlSession = cqlSessionCacheForTest.getSession();
+      CqlSession cqlSession = cqlSessionCacheForTest.getSession(dataApiRequestInfo);
       sessionsCreatedInTests.add(cqlSession);
       assertThat(
               ((DefaultDriverContext) cqlSession.getContext())

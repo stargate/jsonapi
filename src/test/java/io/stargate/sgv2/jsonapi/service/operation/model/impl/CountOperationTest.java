@@ -55,7 +55,7 @@ public class CountOperationTest extends OperationTestBase {
       AsyncResultSet mockResults = new MockAsyncResultSet(COUNT_RESULT_COLUMNS, rows, null);
       final AtomicInteger callCount = new AtomicInteger();
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.executeCount(eq(stmt)))
+      when(queryExecutor.executeCount(eq(dataApiRequestInfo), eq(stmt)))
           .then(
               invocation -> {
                 callCount.incrementAndGet();
@@ -65,7 +65,7 @@ public class CountOperationTest extends OperationTestBase {
       CountOperation countOperation = new CountOperation(CONTEXT, LogicalExpression.and(), 100, -1);
       Supplier<CommandResult> execute =
           countOperation
-              .execute(queryExecutor)
+              .execute(dataApiRequestInfo, queryExecutor)
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitItem()
@@ -96,7 +96,7 @@ public class CountOperationTest extends OperationTestBase {
       AsyncResultSet mockResults = new MockAsyncResultSet(COUNT_RESULT_COLUMNS, rows, null);
       final AtomicInteger callCount = new AtomicInteger();
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.executeCount(eq(stmt)))
+      when(queryExecutor.executeCount(eq(dataApiRequestInfo), eq(stmt)))
           .then(
               invocation -> {
                 callCount.incrementAndGet();
@@ -115,7 +115,7 @@ public class CountOperationTest extends OperationTestBase {
       CountOperation countOperation = new CountOperation(CONTEXT, implicitAnd, 100, -1);
       Supplier<CommandResult> execute =
           countOperation
-              .execute(queryExecutor)
+              .execute(dataApiRequestInfo, queryExecutor)
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitItem()
@@ -146,7 +146,7 @@ public class CountOperationTest extends OperationTestBase {
       AsyncResultSet mockResults = new MockAsyncResultSet(COUNT_RESULT_COLUMNS, rows, null);
       final AtomicInteger callCount = new AtomicInteger();
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.executeCount(eq(stmt)))
+      when(queryExecutor.executeCount(eq(dataApiRequestInfo), eq(stmt)))
           .then(
               invocation -> {
                 callCount.incrementAndGet();
@@ -166,7 +166,7 @@ public class CountOperationTest extends OperationTestBase {
       CountOperation countOperation = new CountOperation(CONTEXT, implicitAnd, 100, -1);
       Supplier<CommandResult> execute =
           countOperation
-              .execute(queryExecutor)
+              .execute(dataApiRequestInfo, queryExecutor)
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitItem()
@@ -194,7 +194,7 @@ public class CountOperationTest extends OperationTestBase {
       SimpleStatement stmt = SimpleStatement.newInstance(collectionReadCql);
       final AtomicInteger callCount = new AtomicInteger();
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.executeCount(eq(stmt)))
+      when(queryExecutor.executeCount(eq(dataApiRequestInfo), eq(stmt)))
           .then(
               invocation -> {
                 callCount.incrementAndGet();
@@ -205,7 +205,7 @@ public class CountOperationTest extends OperationTestBase {
       CountOperation countOperation = new CountOperation(CONTEXT, implicitAnd, 100, -1);
       Throwable result =
           countOperation
-              .execute(queryExecutor)
+              .execute(dataApiRequestInfo, queryExecutor)
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitFailure()
@@ -239,7 +239,7 @@ public class CountOperationTest extends OperationTestBase {
       AsyncResultSet mockResults = new MockAsyncResultSet(COUNT_RESULT_COLUMNS, rows, null);
       final AtomicInteger callCount = new AtomicInteger();
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.executeCount(eq(stmt)))
+      when(queryExecutor.executeCount(eq(dataApiRequestInfo), eq(stmt)))
           .then(
               invocation -> {
                 callCount.incrementAndGet();
@@ -249,7 +249,7 @@ public class CountOperationTest extends OperationTestBase {
       CountOperation countOperation = new CountOperation(CONTEXT, LogicalExpression.and(), 100, 10);
       Supplier<CommandResult> execute =
           countOperation
-              .execute(queryExecutor)
+              .execute(dataApiRequestInfo, queryExecutor)
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitItem()
@@ -279,7 +279,7 @@ public class CountOperationTest extends OperationTestBase {
       AsyncResultSet mockResults = new MockAsyncResultSet(COUNT_RESULT_COLUMNS, rows, null);
       final AtomicInteger callCount = new AtomicInteger();
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.executeCount(eq(stmt)))
+      when(queryExecutor.executeCount(eq(dataApiRequestInfo), eq(stmt)))
           .then(
               invocation -> {
                 callCount.incrementAndGet();
@@ -298,7 +298,7 @@ public class CountOperationTest extends OperationTestBase {
       CountOperation countOperation = new CountOperation(CONTEXT, implicitAnd, 100, 10);
       Supplier<CommandResult> execute =
           countOperation
-              .execute(queryExecutor)
+              .execute(dataApiRequestInfo, queryExecutor)
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitItem()
@@ -328,7 +328,7 @@ public class CountOperationTest extends OperationTestBase {
       AsyncResultSet mockResults = new MockAsyncResultSet(COUNT_RESULT_COLUMNS, rows, null);
       final AtomicInteger callCount = new AtomicInteger();
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.executeCount(eq(stmt)))
+      when(queryExecutor.executeCount(eq(dataApiRequestInfo), eq(stmt)))
           .then(
               invocation -> {
                 callCount.incrementAndGet();
@@ -348,7 +348,7 @@ public class CountOperationTest extends OperationTestBase {
       CountOperation countOperation = new CountOperation(CONTEXT, implicitAnd, 100, 10);
       Supplier<CommandResult> execute =
           countOperation
-              .execute(queryExecutor)
+              .execute(dataApiRequestInfo, queryExecutor)
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitItem()
@@ -376,7 +376,7 @@ public class CountOperationTest extends OperationTestBase {
       SimpleStatement stmt = SimpleStatement.newInstance(collectionReadCql);
       final AtomicInteger callCount = new AtomicInteger();
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.executeCount(eq(stmt)))
+      when(queryExecutor.executeCount(eq(dataApiRequestInfo), eq(stmt)))
           .then(
               invocation -> {
                 callCount.incrementAndGet();
@@ -387,7 +387,7 @@ public class CountOperationTest extends OperationTestBase {
       CountOperation countOperation = new CountOperation(CONTEXT, implicitAnd, 100, 10);
       Throwable result =
           countOperation
-              .execute(queryExecutor)
+              .execute(dataApiRequestInfo, queryExecutor)
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitFailure()

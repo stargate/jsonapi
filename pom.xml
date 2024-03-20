@@ -219,5 +219,61 @@
         <quarkus.native.native-image-xmx>6G</quarkus.native.native-image-xmx>
       </properties>
     </profile>
+    <profile>
+      <!-- This profile is activated by default and excludes offline mode related files that depend on DSE library -->
+      <id>main</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.11.0</version>
+            <configuration>
+              <excludes>
+                <!-- While excluding a java, make sure to exclude the java classes that depend on it also -->
+                <exclude>io/stargate/sgv2/jsonapi/service/cqldriver/sstablewriter/FileWriterSession.java</exclude>
+                <exclude>io/stargate/sgv2/jsonapi/service/operation/model/impl/BeginOfflineSessionOperation.java</exclude>
+                <exclude>io/stargate/sgv2/jsonapi/service/operation/model/impl/OfflineGetStatusOperation.java</exclude>
+                <exclude>io/stargate/sgv2/jsonapi/service/resolver/model/impl/BeginOfflineSessionCommandResolver.java</exclude>
+                <exclude>io/stargate/sgv2/jsonapi/service/resolver/model/impl/OfflineGetStatusCommandResolver.java</exclude>
+              </excludes>
+              <testExcludes>
+                <testExclude>io/stargate/sgv2/jsonapi/service/cqldriver/sstablewriter/OfflineLoaderTester.java</testExclude>
+              </testExcludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+      <distributionManagement>
+        <repository>
+          <uniqueVersion>false</uniqueVersion>
+          <id>artifactory-snapshots</id>
+          <name>DataStax Maven repository</name>
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+      </distributionManagement>
+    </profile>
+    <profile>
+      <!-- This profile needs to be activated while working with offline mode related files such as FileWriterSession.java -->
+      <id>offline</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.datastax.dse</groupId>
+          <artifactId>dse-db-all</artifactId>
+          <version>4.0.11-0248d170a615</version>
+        </dependency>
+      </dependencies>
+      <distributionManagement>
+        <repository>
+          <uniqueVersion>false</uniqueVersion>
+          <id>artifactory-snapshots</id>
+          <name>DataStax Maven repository</name>
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+      </distributionManagement>
+    </profile>
   </profiles>
 </project>

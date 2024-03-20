@@ -9,6 +9,7 @@ import io.stargate.sgv2.jsonapi.api.model.command.CommandContext;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandResult;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandStatus;
 import io.stargate.sgv2.jsonapi.api.model.command.impl.CreateCollectionCommand;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.exception.ErrorCode;
 import io.stargate.sgv2.jsonapi.exception.JsonApiException;
 import io.stargate.sgv2.jsonapi.service.cqldriver.CQLSessionCache;
@@ -51,10 +52,11 @@ public record FindCollectionsOperation(
 
   /** {@inheritDoc} */
   @Override
-  public Uni<Supplier<CommandResult>> execute(QueryExecutor queryExecutor) {
+  public Uni<Supplier<CommandResult>> execute(
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor) {
     KeyspaceMetadata keyspaceMetadata =
         cqlSessionCache
-            .getSession()
+            .getSession(dataApiRequestInfo)
             .getMetadata()
             .getKeyspaces()
             .get(CqlIdentifier.fromInternal(commandContext.namespace()));

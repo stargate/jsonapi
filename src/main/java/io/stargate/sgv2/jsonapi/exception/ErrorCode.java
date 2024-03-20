@@ -145,7 +145,9 @@ public enum ErrorCode {
   NO_NODE_AVAILABLE("No node was available to execute the query"),
   NO_INDEX_ERROR("Faulty collection (missing indexes). Recommend re-creating the collection"),
   COLLECTION_CREATION_ERROR(
-      "Collection creation failure (unable to create table). Recommend re-creating the collection");
+      "Collection creation failure (unable to create table). Recommend re-creating the collection"),
+  OFFLINE_WRITER_SESSION_NOT_FOUND("Offline writer session not found :"),
+  UNABLE_TO_CREATE_OFFLINE_WRITER_SESSION("Unable to create offline writer session");
 
   private final String message;
 

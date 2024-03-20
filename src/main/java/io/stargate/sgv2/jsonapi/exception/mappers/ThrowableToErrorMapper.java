@@ -12,10 +12,12 @@ import com.datastax.oss.driver.api.core.servererrors.ReadTimeoutException;
 import com.datastax.oss.driver.api.core.servererrors.WriteTimeoutException;
 import io.quarkus.security.UnauthorizedException;
 import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandResult;
 import io.stargate.sgv2.jsonapi.config.DebugModeConfig;
 import io.stargate.sgv2.jsonapi.exception.ErrorCode;
 import io.stargate.sgv2.jsonapi.exception.JsonApiException;
+import io.stargate.sgv2.jsonapi.service.cqldriver.sstablewriter.OfflineFileWriterInitializer;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +38,12 @@ public final class ThrowableToErrorMapper {
         }
 
         // construct fieldsForMetricsTag, only expose exceptionClass in debugMode
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+        SmallRyeConfig config;
+        if (OfflineFileWriterInitializer.isOffline()) {
+          config = new SmallRyeConfigBuilder().withMapping(DebugModeConfig.class).build();
+        } else {
+          config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+        }
         DebugModeConfig debugModeConfig = config.getConfigMapping(DebugModeConfig.class);
         final boolean debugEnabled = debugModeConfig.enabled();
         Map<String, Object> fields =

@@ -14,9 +14,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.quarkus.test.junit.mockito.InjectMock;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import io.stargate.sgv2.common.testprofiles.NoGlobalResourcesTestProfile;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.exception.ErrorCode;
 import io.stargate.sgv2.jsonapi.exception.JsonApiException;
 import jakarta.inject.Inject;
@@ -34,13 +36,15 @@ public class NamespaceCacheTest {
 
   @Inject ObjectMapper objectMapper;
 
+  @InjectMock protected DataApiRequestInfo dataApiRequestInfo;
+
   @Nested
   class Execute {
 
     @Test
     public void checkValidJsonApiTable() {
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.getSchema(any(), any()))
+      when(queryExecutor.getSchema(any(), any(), any()))
           .then(
               i -> {
                 List<ColumnMetadata> partitionColumn =
@@ -151,7 +155,7 @@ public class NamespaceCacheTest {
       NamespaceCache namespaceCache = new NamespaceCache("ks", queryExecutor, objectMapper);
       CollectionSettings collectionSettings =
           namespaceCache
-              .getCollectionProperties("table")
+              .getCollectionProperties(dataApiRequestInfo, "table")
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitItem()
@@ -168,7 +172,7 @@ public class NamespaceCacheTest {
     @Test
     public void checkValidJsonApiTableWithIndexing() {
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.getSchema(any(), any()))
+      when(queryExecutor.getSchema(any(), any(), any()))
           .then(
               i -> {
                 List<ColumnMetadata> partitionColumn =
@@ -281,7 +285,7 @@ public class NamespaceCacheTest {
       NamespaceCache namespaceCache = new NamespaceCache("ks", queryExecutor, objectMapper);
       CollectionSettings collectionSettings =
           namespaceCache
-              .getCollectionProperties("table")
+              .getCollectionProperties(dataApiRequestInfo, "table")
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitItem()
@@ -299,7 +303,7 @@ public class NamespaceCacheTest {
     @Test
     public void checkInvalidJsonApiTable() {
       QueryExecutor queryExecutor = mock(QueryExecutor.class);
-      when(queryExecutor.getSchema(any(), any()))
+      when(queryExecutor.getSchema(any(), any(), any()))
           .then(
               i -> {
                 List<ColumnMetadata> partitionColumn =
@@ -345,7 +349,7 @@ public class NamespaceCacheTest {
       NamespaceCache namespaceCache = new NamespaceCache("ks", queryExecutor, objectMapper);
       Throwable error =
           namespaceCache
-              .getCollectionProperties("table")
+              .getCollectionProperties(dataApiRequestInfo, "table")
               .subscribe()
               .withSubscriber(UniAssertSubscriber.create())
               .awaitFailure()

@@ -15,8 +15,17 @@ import java.util.Optional;
  */
 @RequestScoped
 public class DataApiRequestInfo {
-  private final Optional<String> tenantId;
+  private Optional<String> tenantId;
   private final Optional<String> cassandraToken;
+
+  public DataApiRequestInfo() {
+    this.cassandraToken = Optional.empty();
+  }
+
+  public DataApiRequestInfo(Optional<String> tenantId) {
+    this.tenantId = tenantId;
+    this.cassandraToken = Optional.empty();
+  }
 
   @Inject
   public DataApiRequestInfo(
@@ -28,6 +37,10 @@ public class DataApiRequestInfo {
         ((TenantResolver) tenantResolver.get()).resolve(routingContext, securityContext);
     this.cassandraToken =
         ((CassandraTokenResolver) tokenResolver.get()).resolve(routingContext, securityContext);
+  }
+
+  public void setTenantId(String tenantId) {
+    this.tenantId = Optional.ofNullable(tenantId);
   }
 
   public Optional<String> getTenantId() {

@@ -51,11 +51,12 @@ public class MeteredCommandProcessorTest {
           objectMapper.readValue(json, CountDocumentsCommand.class);
       CommandContext commandContext = new CommandContext("namespace", "collection");
       CommandResult commandResult = new CommandResult(Collections.emptyList());
-      Mockito.when(commandProcessor.processCommand(commandContext, countCommand))
+      Mockito.when(
+              commandProcessor.processCommand(dataApiRequestInfo, commandContext, countCommand))
           .thenReturn(Uni.createFrom().item(commandResult));
       Mockito.when(dataApiRequestInfo.getTenantId()).thenReturn(Optional.of("test-tenant"));
       meteredCommandProcessor
-          .processCommand(commandContext, countCommand)
+          .processCommand(dataApiRequestInfo, commandContext, countCommand)
           .await()
           .atMost(Duration.ofMinutes(1));
       String metrics = given().when().get("/metrics").then().statusCode(200).extract().asString();
@@ -103,11 +104,12 @@ public class MeteredCommandProcessorTest {
       CommandResult.Error error =
           new CommandResult.Error("message", fields, fields, Response.Status.OK);
       CommandResult commandResult = new CommandResult(Collections.singletonList(error));
-      Mockito.when(commandProcessor.processCommand(commandContext, countCommand))
+      Mockito.when(
+              commandProcessor.processCommand(dataApiRequestInfo, commandContext, countCommand))
           .thenReturn(Uni.createFrom().item(commandResult));
       Mockito.when(dataApiRequestInfo.getTenantId()).thenReturn(Optional.of("test-tenant"));
       meteredCommandProcessor
-          .processCommand(commandContext, countCommand)
+          .processCommand(dataApiRequestInfo, commandContext, countCommand)
           .await()
           .atMost(Duration.ofMinutes(1));
       String metrics = given().when().get("/metrics").then().statusCode(200).extract().asString();
@@ -160,11 +162,12 @@ public class MeteredCommandProcessorTest {
       CommandResult.Error error =
           new CommandResult.Error("message", fields, fields, Response.Status.OK);
       CommandResult commandResult = new CommandResult(Collections.singletonList(error));
-      Mockito.when(commandProcessor.processCommand(commandContext, countCommand))
+      Mockito.when(
+              commandProcessor.processCommand(dataApiRequestInfo, commandContext, countCommand))
           .thenReturn(Uni.createFrom().item(commandResult));
       Mockito.when(dataApiRequestInfo.getTenantId()).thenReturn(Optional.of("test-tenant"));
       meteredCommandProcessor
-          .processCommand(commandContext, countCommand)
+          .processCommand(dataApiRequestInfo, commandContext, countCommand)
           .await()
           .atMost(Duration.ofMinutes(1));
       String metrics = given().when().get("/metrics").then().statusCode(200).extract().asString();

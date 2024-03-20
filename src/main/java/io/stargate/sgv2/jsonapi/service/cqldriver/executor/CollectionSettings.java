@@ -172,7 +172,7 @@ public record CollectionSettings(
         collectionName, vectorEnabled, vectorSize, similarityFunction, comment, objectMapper);
   }
 
-  private static CollectionSettings createCollectionSettings(
+  public static CollectionSettings createCollectionSettings(
       String collectionName,
       boolean vectorEnabled,
       int vectorSize,

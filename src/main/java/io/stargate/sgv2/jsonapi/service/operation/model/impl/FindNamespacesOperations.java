@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.CqlIdentifier;
 import io.smallrye.mutiny.Uni;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandResult;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandStatus;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.service.cqldriver.CQLSessionCache;
 import io.stargate.sgv2.jsonapi.service.cqldriver.executor.QueryExecutor;
 import io.stargate.sgv2.jsonapi.service.operation.model.Operation;
@@ -21,14 +22,20 @@ public record FindNamespacesOperations(CQLSessionCache cqlSessionCache) implemen
 
   /** {@inheritDoc} */
   @Override
-  public Uni<Supplier<CommandResult>> execute(QueryExecutor queryExecutor) {
+  public Uni<Supplier<CommandResult>> execute(
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor) {
 
     return Uni.createFrom()
         .item(
             () -> {
               // get all existing keyspaces
               List<String> keyspacesList =
-                  cqlSessionCache.getSession().getMetadata().getKeyspaces().keySet().stream()
+                  cqlSessionCache
+                      .getSession(dataApiRequestInfo)
+                      .getMetadata()
+                      .getKeyspaces()
+                      .keySet()
+                      .stream()
                       .map(CqlIdentifier::asInternal)
                       .toList();
               return new Result(keyspacesList);

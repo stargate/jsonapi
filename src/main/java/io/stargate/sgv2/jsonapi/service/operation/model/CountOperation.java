@@ -9,6 +9,7 @@ import io.stargate.sgv2.api.common.cql.builder.QueryBuilder;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandContext;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandResult;
 import io.stargate.sgv2.jsonapi.api.model.command.clause.filter.LogicalExpression;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.service.cqldriver.executor.QueryExecutor;
 import io.stargate.sgv2.jsonapi.service.operation.model.impl.CountOperationPage;
 import io.stargate.sgv2.jsonapi.service.operation.model.impl.ExpressionBuilder;
@@ -25,11 +26,13 @@ public record CountOperation(
     implements ReadOperation {
 
   @Override
-  public Uni<Supplier<CommandResult>> execute(QueryExecutor queryExecutor) {
+  public Uni<Supplier<CommandResult>> execute(
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor) {
     SimpleStatement simpleStatement = buildSelectQuery();
     Uni<CountResponse> countResponse = null;
-    if (limit == -1) countResponse = countDocuments(queryExecutor, simpleStatement);
-    else countResponse = countDocumentsByKey(queryExecutor, simpleStatement);
+    if (limit == -1)
+      countResponse = countDocuments(dataApiRequestInfo, queryExecutor, simpleStatement);
+    else countResponse = countDocumentsByKey(dataApiRequestInfo, queryExecutor, simpleStatement);
 
     return countResponse
         .onItem()

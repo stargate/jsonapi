@@ -7,6 +7,7 @@ import io.smallrye.mutiny.tuples.Tuple2;
 import io.smallrye.mutiny.tuples.Tuple3;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandContext;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandResult;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.exception.ErrorCode;
 import io.stargate.sgv2.jsonapi.exception.JsonApiException;
 import io.stargate.sgv2.jsonapi.service.cqldriver.executor.QueryExecutor;
@@ -53,7 +54,8 @@ public record DeleteOperation(
   }
 
   @Override
-  public Uni<Supplier<CommandResult>> execute(QueryExecutor queryExecutor) {
+  public Uni<Supplier<CommandResult>> execute(
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor) {
     final AtomicBoolean moreData = new AtomicBoolean(false);
     final String delete = buildDeleteQuery();
     AtomicInteger totalCount = new AtomicInteger(0);
@@ -65,7 +67,8 @@ public record DeleteOperation(
             () -> new AtomicReference<String>(null),
             stateRef -> {
               Uni<ReadOperation.FindResponse> docsToDelete =
-                  findOperation().getDocuments(queryExecutor, stateRef.get(), null);
+                  findOperation()
+                      .getDocuments(dataApiRequestInfo, queryExecutor, stateRef.get(), null);
               return docsToDelete
                   .onItem()
                   .invoke(findResponse -> stateRef.set(findResponse.pageState()));
@@ -97,7 +100,7 @@ public record DeleteOperation(
         .onItem()
         .transformToUniAndMerge(
             document -> {
-              return deleteDocument(queryExecutor, delete, document)
+              return deleteDocument(dataApiRequestInfo, queryExecutor, delete, document)
                   // Retry `retryLimit` times in case of LWT failure
                   .onFailure(LWTException.class)
                   .recoverWithUni(
@@ -106,13 +109,17 @@ public record DeleteOperation(
                             .item(document)
                             .flatMap(
                                 prevDoc -> {
-                                  return readDocumentAgain(queryExecutor, prevDoc)
+                                  return readDocumentAgain(
+                                          dataApiRequestInfo, queryExecutor, prevDoc)
                                       .onItem()
                                       // Try deleting the document
                                       .transformToUni(
                                           reReadDocument ->
                                               deleteDocument(
-                                                  queryExecutor, delete, reReadDocument));
+                                                  dataApiRequestInfo,
+                                                  queryExecutor,
+                                                  delete,
+                                                  reReadDocument));
                                 })
                             .onFailure(LWTException.class)
                             .retry()
@@ -179,7 +186,11 @@ public record DeleteOperation(
    *     LWT failure. ReadDocument is the document that was deleted.
    */
   private Uni<Tuple2<Boolean, ReadDocument>> deleteDocument(
-      QueryExecutor queryExecutor, String query, ReadDocument doc) throws JsonApiException {
+      DataApiRequestInfo dataApiRequestInfo,
+      QueryExecutor queryExecutor,
+      String query,
+      ReadDocument doc)
+      throws JsonApiException {
     return Uni.createFrom()
         .item(doc)
         // Read again if retryAttempt >`0`
@@ -191,7 +202,7 @@ public record DeleteOperation(
               } else {
                 SimpleStatement deleteStatement = bindDeleteQuery(query, document);
                 return queryExecutor
-                    .executeWrite(deleteStatement)
+                    .executeWrite(dataApiRequestInfo, deleteStatement)
                     .onItem()
                     .transform(
                         result -> {
@@ -210,10 +221,13 @@ public record DeleteOperation(
   }
 
   private Uni<ReadDocument> readDocumentAgain(
-      QueryExecutor queryExecutor, ReadDocument prevReadDoc) {
+      DataApiRequestInfo dataApiRequestInfo,
+      QueryExecutor queryExecutor,
+      ReadDocument prevReadDoc) {
     // Read again if retry flag is `true`
     return findOperation()
         .getDocuments(
+            dataApiRequestInfo,
             queryExecutor,
             null,
             new DBFilterBase.IDFilter(DBFilterBase.IDFilter.Operator.EQ, prevReadDoc.id()))

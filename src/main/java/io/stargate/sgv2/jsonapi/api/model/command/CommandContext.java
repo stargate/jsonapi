@@ -31,6 +31,16 @@ public record CommandContext(
     this(namespace, collection, CollectionSettings.empty(), null, null, null);
   }
 
+  public static CommandContext from(
+      String namespace,
+      String collection,
+      CollectionSettings collectionSettings,
+      EmbeddingService embeddingService,
+      String commandName) {
+    return new CommandContext(
+        namespace, collection, collectionSettings, embeddingService, commandName, null);
+  }
+
   public CommandContext(
       String namespace,
       String collection,

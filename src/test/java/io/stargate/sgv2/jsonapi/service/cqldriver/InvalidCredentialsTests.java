@@ -1,7 +1,6 @@
 package io.stargate.sgv2.jsonapi.service.cqldriver;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -19,7 +18,6 @@ import io.stargate.sgv2.jsonapi.config.OperationsConfig;
 import io.stargate.sgv2.jsonapi.exception.mappers.ThrowableToErrorMapper;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -64,17 +62,13 @@ public class InvalidCredentialsTests {
     when(dataApiRequestInfo.getCassandraToken())
         .thenReturn(operationsConfig.databaseConfig().fixedToken());
     CQLSessionCache cqlSessionCacheForTest = new CQLSessionCache(operationsConfig, meterRegistry);
-    Field dataApiRequestInfoField =
-        cqlSessionCacheForTest.getClass().getDeclaredField("dataApiRequestInfo");
-    dataApiRequestInfoField.setAccessible(true);
-    dataApiRequestInfoField.set(cqlSessionCacheForTest, dataApiRequestInfo);
-    // set operation config
-    Field operationsConfigField =
-        cqlSessionCacheForTest.getClass().getDeclaredField("operationsConfig");
-    operationsConfigField.setAccessible(true);
-    operationsConfigField.set(cqlSessionCacheForTest, operationsConfig);
     // Throwable
-    Throwable t = catchThrowable(cqlSessionCacheForTest::getSession);
+    Throwable t = null;
+    try {
+      CqlSession cqlSession = cqlSessionCacheForTest.getSession(dataApiRequestInfo);
+    } catch (Throwable throwable) {
+      t = throwable;
+    }
     assertThat(t).isInstanceOf(AllNodesFailedException.class);
     CommandResult.Error error =
         ThrowableToErrorMapper.getMapperWithMessageFunction().apply(t, t.getMessage());

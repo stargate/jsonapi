@@ -2,6 +2,7 @@ package io.stargate.sgv2.jsonapi.service.operation.model;
 
 import io.smallrye.mutiny.Uni;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandResult;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.service.cqldriver.executor.QueryExecutor;
 import java.util.function.Supplier;
 
@@ -24,5 +25,6 @@ import java.util.function.Supplier;
  * OperationExecutor}
  */
 public interface Operation {
-  Uni<Supplier<CommandResult>> execute(QueryExecutor queryExecutor);
+  Uni<Supplier<CommandResult>> execute(
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor);
 }

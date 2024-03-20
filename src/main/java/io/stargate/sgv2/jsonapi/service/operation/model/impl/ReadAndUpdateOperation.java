@@ -6,6 +6,7 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandContext;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandResult;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.exception.ErrorCode;
 import io.stargate.sgv2.jsonapi.service.cqldriver.executor.QueryExecutor;
 import io.stargate.sgv2.jsonapi.service.cqldriver.serializer.CQLBindValues;
@@ -53,12 +54,14 @@ public record ReadAndUpdateOperation(
     implements ModifyOperation {
 
   @Override
-  public Uni<Supplier<CommandResult>> execute(QueryExecutor queryExecutor) {
+  public Uni<Supplier<CommandResult>> execute(
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor) {
     final AtomicReference pageStateReference = new AtomicReference();
     final AtomicInteger matchedCount = new AtomicInteger(0);
     final AtomicInteger modifiedCount = new AtomicInteger(0);
     Uni<ReadOperation.FindResponse> docsToUpdate =
-        findOperation().getDocuments(queryExecutor, findOperation().pageState(), null);
+        findOperation()
+            .getDocuments(dataApiRequestInfo, queryExecutor, findOperation().pageState(), null);
     return docsToUpdate
         .onItem()
         .transformToMulti(
@@ -75,7 +78,7 @@ public record ReadAndUpdateOperation(
         .onItem()
         .transformToUniAndConcatenate(
             readDocument ->
-                processUpdate(readDocument, queryExecutor, modifiedCount)
+                processUpdate(dataApiRequestInfo, readDocument, queryExecutor, modifiedCount)
                     .onFailure(LWTException.class)
                     .recoverWithUni(
                         () -> {
@@ -85,13 +88,17 @@ public record ReadAndUpdateOperation(
                               .flatMap(
                                   prevDoc -> {
                                     // read the document again
-                                    return readDocumentAgain(queryExecutor, prevDoc)
+                                    return readDocumentAgain(
+                                            dataApiRequestInfo, queryExecutor, prevDoc)
                                         .onItem()
                                         // Try updating the document
                                         .transformToUni(
                                             reReadDocument ->
                                                 processUpdate(
-                                                    reReadDocument, queryExecutor, modifiedCount));
+                                                    dataApiRequestInfo,
+                                                    reReadDocument,
+                                                    queryExecutor,
+                                                    modifiedCount));
                                   })
                               .onFailure(LWTException.class)
                               .retry()
@@ -128,7 +135,10 @@ public record ReadAndUpdateOperation(
   }
 
   private Uni<UpdatedDocument> processUpdate(
-      ReadDocument document, QueryExecutor queryExecutor, AtomicInteger modifiedCount) {
+      DataApiRequestInfo dataApiRequestInfo,
+      ReadDocument document,
+      QueryExecutor queryExecutor,
+      AtomicInteger modifiedCount) {
     return Uni.createFrom()
         .item(document)
 
@@ -172,7 +182,7 @@ public record ReadAndUpdateOperation(
               // Have to do this because shredder adds _id field to the document if it doesn't exist
               JsonNode updatedDocument = writableShreddedDocument.docJsonNode();
               // update the document
-              return updatedDocument(queryExecutor, writableShreddedDocument)
+              return updatedDocument(dataApiRequestInfo, queryExecutor, writableShreddedDocument)
 
                   // send result back depending on the input
                   .onItem()
@@ -198,14 +208,16 @@ public record ReadAndUpdateOperation(
   }
 
   private Uni<DocumentId> updatedDocument(
-      QueryExecutor queryExecutor, WritableShreddedDocument writableShreddedDocument) {
+      DataApiRequestInfo dataApiRequestInfo,
+      QueryExecutor queryExecutor,
+      WritableShreddedDocument writableShreddedDocument) {
     final SimpleStatement updateQuery =
         bindUpdateValues(
             buildUpdateQuery(commandContext().isVectorEnabled()),
             writableShreddedDocument,
             commandContext().isVectorEnabled());
     return queryExecutor
-        .executeWrite(updateQuery)
+        .executeWrite(dataApiRequestInfo, updateQuery)
         .onItem()
         .transformToUni(
             result -> {
@@ -303,9 +315,12 @@ public record ReadAndUpdateOperation(
    * @return
    */
   private Uni<ReadDocument> readDocumentAgain(
-      QueryExecutor queryExecutor, ReadDocument prevReadDoc) {
+      DataApiRequestInfo dataApiRequestInfo,
+      QueryExecutor queryExecutor,
+      ReadDocument prevReadDoc) {
     return findOperation()
         .getDocuments(
+            dataApiRequestInfo,
             queryExecutor,
             null,
             new DBFilterBase.IDFilter(DBFilterBase.IDFilter.Operator.EQ, prevReadDoc.id()))

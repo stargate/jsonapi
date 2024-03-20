@@ -11,6 +11,7 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandContext;
 import io.stargate.sgv2.jsonapi.api.model.command.CommandResult;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.config.DatabaseLimitsConfig;
 import io.stargate.sgv2.jsonapi.exception.ErrorCode;
 import io.stargate.sgv2.jsonapi.exception.JsonApiException;
@@ -96,12 +97,19 @@ public record CreateCollectionOperation(
         tooManyIndexesRollbackEnabled);
   }
 
+  public static CreateCollectionOperation forCQL(
+      boolean vectorSearch, String vectorFunction, int vectorSize, String comment) {
+    return new CreateCollectionOperation(
+        null, null, null, null, null, vectorSearch, vectorSize, vectorFunction, comment, 0, false);
+  }
+
   @Override
-  public Uni<Supplier<CommandResult>> execute(QueryExecutor queryExecutor) {
+  public Uni<Supplier<CommandResult>> execute(
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor) {
     logger.info("Executing CreateCollectionOperation for {}", name);
     // validate Data API collection limit guardrail and get tableMetadata
     Map<CqlIdentifier, KeyspaceMetadata> allKeyspaces =
-        cqlSessionCache.getSession().getMetadata().getKeyspaces();
+        cqlSessionCache.getSession(dataApiRequestInfo).getMetadata().getKeyspaces();
     KeyspaceMetadata currKeyspace =
         allKeyspaces.get(CqlIdentifier.fromInternal(commandContext.namespace()));
     if (currKeyspace == null) {
@@ -116,7 +124,7 @@ public record CreateCollectionOperation(
 
     // if table doesn't exist, continue to create collection
     if (table == null) {
-      return executeCollectionCreation(queryExecutor, false);
+      return executeCollectionCreation(dataApiRequestInfo, queryExecutor, false);
     }
     // if table exists, compare existedCollectionSettings and newCollectionSettings
     CollectionSettings existedCollectionSettings =
@@ -133,7 +141,7 @@ public record CreateCollectionOperation(
     // (1) trying to create with same options -> ok, proceed
     // (2) trying to create with different options -> error out
     if (existedCollectionSettings.equals(newCollectionSettings)) {
-      return executeCollectionCreation(queryExecutor, true);
+      return executeCollectionCreation(dataApiRequestInfo, queryExecutor, true);
     }
     return Uni.createFrom()
         .failure(
@@ -150,9 +158,12 @@ public record CreateCollectionOperation(
    * @return
    */
   private Uni<Supplier<CommandResult>> executeCollectionCreation(
-      QueryExecutor queryExecutor, boolean collectionExisted) {
+      DataApiRequestInfo dataApiRequestInfo,
+      QueryExecutor queryExecutor,
+      boolean collectionExisted) {
     final Uni<AsyncResultSet> execute =
-        queryExecutor.executeCreateSchemaChange(getCreateTable(commandContext.namespace(), name));
+        queryExecutor.executeCreateSchemaChange(
+            dataApiRequestInfo, getCreateTable(commandContext.namespace(), name));
     final Uni<Boolean> indexResult =
         execute
             .onItem()
@@ -167,7 +178,10 @@ public record CreateCollectionOperation(
                     return Multi.createFrom()
                         .items(indexStatements.stream())
                         .onItem()
-                        .transformToUni(queryExecutor::executeCreateSchemaChange)
+                        .transformToUni(
+                            indexStatement ->
+                                queryExecutor.executeCreateSchemaChange(
+                                    dataApiRequestInfo, indexStatement))
                         .concatenate()
                         .collect()
                         .asList()
@@ -209,7 +223,7 @@ public record CreateCollectionOperation(
               // if index creation violates DB index limit and collection not existed before,
               // and rollback is enabled, then drop the collection
               if (!collectionExisted && tooManyIndexesRollbackEnabled) {
-                return cleanUpCollectionFailedWithTooManyIndex(queryExecutor);
+                return cleanUpCollectionFailedWithTooManyIndex(dataApiRequestInfo, queryExecutor);
               }
               // if index creation violates DB index limit and collection existed before,
               // will not drop the collection
@@ -223,11 +237,11 @@ public record CreateCollectionOperation(
   }
 
   public Uni<JsonApiException> cleanUpCollectionFailedWithTooManyIndex(
-      QueryExecutor queryExecutor) {
+      DataApiRequestInfo dataApiRequestInfo, QueryExecutor queryExecutor) {
     DeleteCollectionOperation deleteCollectionOperation =
         new DeleteCollectionOperation(commandContext, name);
     return deleteCollectionOperation
-        .execute(queryExecutor)
+        .execute(dataApiRequestInfo, queryExecutor)
         .onItem()
         .transform(
             res ->
@@ -291,7 +305,7 @@ public record CreateCollectionOperation(
     return null;
   }
 
-  protected SimpleStatement getCreateTable(String keyspace, String table) {
+  public SimpleStatement getCreateTable(String keyspace, String table) {
     if (vectorSearch) {
       String createTableWithVector =
           "CREATE TABLE IF NOT EXISTS \"%s\".\"%s\" ("
@@ -336,7 +350,7 @@ public record CreateCollectionOperation(
     }
   }
 
-  protected List<SimpleStatement> getIndexStatements(String keyspace, String table) {
+  public List<SimpleStatement> getIndexStatements(String keyspace, String table) {
     List<SimpleStatement> statements = new ArrayList<>(10);
 
     String existKeys =

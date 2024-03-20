@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.grpc.StatusRuntimeException;
 import io.smallrye.mutiny.Uni;
+import io.stargate.sgv2.jsonapi.api.request.DataApiRequestInfo;
 import io.stargate.sgv2.jsonapi.exception.ErrorCode;
 import io.stargate.sgv2.jsonapi.exception.JsonApiException;
 import io.stargate.sgv2.jsonapi.service.schema.model.JsonapiTableMatcher;
@@ -33,12 +34,13 @@ public class NamespaceCache {
     this.objectMapper = objectMapper;
   }
 
-  protected Uni<CollectionSettings> getCollectionProperties(String collectionName) {
+  protected Uni<CollectionSettings> getCollectionProperties(
+      DataApiRequestInfo dataApiRequestInfo, String collectionName) {
     CollectionSettings collectionProperty = vectorCache.getIfPresent(collectionName);
     if (null != collectionProperty) {
       return Uni.createFrom().item(collectionProperty);
     } else {
-      return getVectorProperties(collectionName)
+      return getVectorProperties(dataApiRequestInfo, collectionName)
           .onItemOrFailure()
           .transformToUni(
               (result, error) -> {
@@ -86,9 +88,10 @@ public class NamespaceCache {
     }
   }
 
-  private Uni<CollectionSettings> getVectorProperties(String collectionName) {
+  private Uni<CollectionSettings> getVectorProperties(
+      DataApiRequestInfo dataApiRequestInfo, String collectionName) {
     return queryExecutor
-        .getSchema(namespace, collectionName)
+        .getSchema(dataApiRequestInfo, namespace, collectionName)
         .onItem()
         .transform(
             table -> {
